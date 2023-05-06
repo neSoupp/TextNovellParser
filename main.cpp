@@ -2,15 +2,9 @@
 #include <fstream>
 #include <string>
 
-/**
- * @brief Класс для парсинга текстового файла.
- */
+
 class Parser {
 public:
-    /**
-     * @brief Считывает и обрабатывает файл.
-     * @param filename Имя файла для считывания.
-     */
     void parseFile(const std::string& filename);
 };
 
@@ -61,10 +55,6 @@ void Parser::parseFile(const std::string& filename) {
     file.close();
 }
 
-/**
- * @brief Точка входа в программу.
- * @return Код возврата.
- */
 int main() {
     Parser parser;
     parser.parseFile("parserscript.txt");
