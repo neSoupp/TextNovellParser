@@ -1,7 +1,7 @@
 # TextNovellParser
 Now i made Text novell parser but in future i think what I'll add visual by using SFML library maybe 
 
-##Guide
+## Guide
 txt for display text
 name for display name
 
