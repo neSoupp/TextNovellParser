@@ -7,5 +7,5 @@ txt for display text
 name for display name
 
 
-## example
+## Example
 <img src = "example.png">
