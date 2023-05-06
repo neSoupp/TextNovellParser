@@ -3,6 +3,7 @@ Now i made Text novell parser but in future i think what I'll add visual by usin
 
 ## Guide
 txt for display text
+
 name for display name
 
 <img src = "example.png">
