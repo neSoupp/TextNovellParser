@@ -1,63 +1,136 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
+#include <vector>
 
-
-class Parser {
-public:
-    void parseFile(const std::string& filename);
+struct Variable {
+    std::string name;
+    std::string value;
 };
 
-void Parser::parseFile(const std::string& filename) {
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        std::cout << "Не удалось открыть файл: " << filename << std::endl;
-        return;
-    }
-    
-    std::string name;
-    std::string text;
-    std::string line;
+bool signs(const std::string& condition, const std::vector<Variable>& variables) {
+    // Разбиваем условие на операнды и оператор сравнения
+    std::istringstream fin(condition);
+    std::string leftOperand, signOperand, rightOperand;
+    fin >> leftOperand >> signOperand >> rightOperand;
 
-    while (std::getline(file, line)) {
-        if (line == "name") {
-            if (std::getline(file, line)) {
-                name = line;
-            } else {
-                std::cout << "Ошибка: Отсутствует имя после ключевого слова 'name'." << std::endl;
-                return;
-            }
-        } else if (line == "txt") {
-            if (std::getline(file, line)) {
-                text = line;
-            } else {
-                std::cout << "Ошибка: Отсутствует текст после ключевого слова 'txt'." << std::endl;
-                return;
-            }
+    // Проходимся по списку переменных и ищем совпадение с левым операндом
+    for (const Variable& variable : variables) {
+        if (variable.name == leftOperand) {
+            std::string leftValue = variable.value;
+            // Внутренний цикл для поиска совпадения с правым операндом
+            for (const Variable& variable : variables) {
+                if (variable.name == rightOperand) {
+                    std::string rightValue = variable.value;
 
-            std::cout << "\033[93m" << name << "\033[0m" << ":" << "\033[92m" << text << "\033[0m" << std::endl;
-
-            std::string input;
-            std::cout << "\033[1m" << "next " << "\033[0m" << "для продолжения, " << "\033[1m" << "exit " << "\033[0m" << "для выхода: ";
-            std::getline(std::cin, input);
-
-            while (input != "next" && input != "exit") {
-                std::cout << "Неверная команда. Попробуйте снова: ";
-                std::getline(std::cin, input);
-            }
-
-            if (input == "exit") {
-                break;
+                    // Проверяем оператор сравнения и возвращаем результат сравнения
+                    if (signOperand == "==") {
+                        return leftValue == rightValue;
+                    } else if (signOperand == "!=") {
+                        return leftValue != rightValue;
+                    } else if (signOperand == ">") {
+                        return std::stoi(leftValue) > std::stoi(rightValue);
+                    } else if (signOperand == ">=") {
+                        return std::stoi(leftValue) >= std::stoi(rightValue);
+                    } else if (signOperand == "<") {
+                        return std::stoi(leftValue) < std::stoi(rightValue);
+                    } else if (signOperand == "<=") {
+                        return std::stoi(leftValue) <= std::stoi(rightValue);
+                    }
+                }
             }
         }
     }
 
-    file.close();
+    // Если не найдено совпадение или неправильный оператор сравнения, возвращаем false
+    return false;
+}
+void parserScript(const std::string& scriptFilename) {
+    std::ifstream finScript(scriptFilename);
+    std::string line; // Переменная для хранения текущей строки из файла
+    bool nextPage = false; // Флаг, указывающий, следует ли переходить на следующую страницу
+    std::vector<Variable> variables; // Вектор для хранения переменных
+
+    bool ifBlock = false; // Флаг, указывающий, находимся ли мы внутри блока if
+    bool conditionSatisfied = true; // Флаг, указывающий, выполнено ли условие в текущем блоке if
+    bool previousConditionSatisfied = true;
+
+    while (std::getline(finScript, line)) {
+        std::istringstream fin(line);
+        std::string command;
+        fin >> command;
+
+        if (command == "/set") { // Команда /set используется для установки значения переменной
+            std::string variable, value; 
+            fin >> variable;
+            std::getline(fin, value); // Читаем остаток строки в переменную value
+            value = value.substr(1); // Избавляемся от пробела в начале значения
+            variables.push_back({variable, value}); // Добавляем переменную в вектор переменных
+        } else if (command == "/input") {
+            std::string variable;
+            fin >> variable;
+
+            std::cout << "Ввод: ";
+            std::string input; 
+            std::getline(std::cin, input); // Читаем ввод пользователя
+            variables.push_back({variable, input});
+        } else if (command == "/if") { // Команда /if используется для начала блока условия
+            std::string condition;
+            std::getline(fin, condition);
+            condition = condition.substr(1);
+
+            if (ifBlock) { // Если уже находимся в блоке if, то это вложенный блок
+                previousConditionSatisfied = conditionSatisfied;
+                conditionSatisfied = previousConditionSatisfied && signs(condition, variables);
+                continue; 
+            }
+
+            conditionSatisfied = signs(condition, variables);
+            ifBlock = true; // Устанавливаем флаг, что находимся в блоке if
+        } else if (command == "/end") { // Команда /end используется для завершения блока условия
+            if (ifBlock) { // Если находимся в блоке if, то сбрасываем флаги
+                ifBlock = false;
+                conditionSatisfied = true;
+            }
+            continue;
+        } else if (command == "/say") { // Команда /say используется для вывода сообщения
+            if (ifBlock && !conditionSatisfied) { // Если находимся внутри блока if и условие не выполнено, пропускаем команду
+                continue;
+            }
+
+            std::string person;
+            std::getline(fin, person, ':'); // Читаем имя отправителя сообщения
+
+            std::string message;
+            std::getline(fin, message);
+
+            std::string variablePlaceholder = "{";
+            size_t variableStartPos = message.find(variablePlaceholder);
+            while (variableStartPos != std::string::npos) { // Заменяем затычки переменных на их значения
+                size_t variableEndPos = message.find('}', variableStartPos);
+                if (variableEndPos != std::string::npos) {
+                    std::string variableName = message.substr(variableStartPos + 1, variableEndPos - variableStartPos - 1); // Ищем переменную по имени
+                    for (const Variable& variable : variables) { // Если найдена, заменяем плейсхолдер на значение переменной
+                        if (variable.name == variableName) {
+                            message.replace(variableStartPos, variableEndPos - variableStartPos + 1, variable.value);
+                            variableStartPos = message.find(variablePlaceholder, variableStartPos + variable.value.length());
+                            break;
+                        }
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            std::cout << person << ": " << message << std::endl;
+        }
+    }
 }
 
 int main() {
-    Parser parser;
-    parser.parseFile("parserscript.txt");
+    std::string scriptFilename = "script.txt";
+    parserScript(scriptFilename);
 
     return 0;
 }
