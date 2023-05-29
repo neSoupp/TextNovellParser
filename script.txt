@@ -1,0 +1,19 @@
+/set option1 Пойти налево
+/set option1Answer 1
+/set option2Answer 2
+/set option2 Пойти направо
+
+/say Xdd: Куда ты хочешь пойти?
+/say Xdd: 1. {option1}
+/say Xdd: 2. {option2}
+
+/input choice
+
+/if choice == option1Answer
+    /say Xdd: Ты выбрал пойти налево.
+/end
+/if choice == option2Answer
+    /say Xdd: Ты выбрал пойти направо.
+/end
+
+/say Xdd: Конец истории
