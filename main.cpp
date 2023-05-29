@@ -54,7 +54,7 @@ void parserScript(const std::string& scriptFilename) {
 
     bool ifBlock = false; // Флаг, указывающий, находимся ли мы внутри блока if
     bool conditionSatisfied = true; // Флаг, указывающий, выполнено ли условие в текущем блоке if
-    bool previousConditionSatisfied = true;
+    bool previousConditionSatisfied = true; // Предыдущее значение флага conditionSatisfied
 
     while (std::getline(finScript, line)) {
         std::istringstream fin(line);
@@ -134,3 +134,5 @@ int main() {
 
     return 0;
 }
+
+
